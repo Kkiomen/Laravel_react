@@ -21,12 +21,6 @@ export default function MainAppLayout() {
       })
   }
 
-  useEffect(() => {
-    axiosClient.get('/user')
-      .then(({data}) => {
-        setUser(data)
-      })
-  }, [])
   return (
     <div className="">
       <Outlet/>
