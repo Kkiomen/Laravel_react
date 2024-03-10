@@ -1,0 +1,103 @@
+version: '3'
+services:
+    project:
+        build:
+            context: ./docker/8.2
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.2/app
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        ports:
+            - '${APP_PORT:-215}:80'
+            - '${VITE_PORT:-5144}:${VITE_PORT:-5144}'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - mysql_project
+            - project_qdrant
+            - project_rabbitmq
+    mysql_project:
+        image: 'mysql/mysql-server:8.0'
+        ports:
+            - '${FORWARD_DB_PORT:-3355}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        volumes:
+            - 'sail-mysql:/var/lib/mysql'
+            - './vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
+        networks:
+            - sail
+        restart: always
+        healthcheck:
+            test: [ 'CMD', 'mysqladmin', 'ping', '-p${DB_PASSWORD}' ]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+    project_qdrant:
+        image: 'qdrant/qdrant:latest'
+        restart: always
+        ports:
+            - '6333:6333'
+        volumes:
+            - 'qdrant-storage:/qdrant/storage'
+        networks:
+            - sail
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+            - 8080:8080
+        networks:
+            - sail
+    project_rabbitmq:
+        image: rabbitmq:3-management-alpine
+        container_name: 'project_rabbitmq'
+        restart: always
+        ports:
+            - 5672:5672
+            - 15672:15672
+        volumes:
+            - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+            - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+            - ./rabbitmq_definitions.json:/etc/rabbitmq/definitions.json
+        environment:
+            - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_management load_definitions "/etc/rabbitmq/definitions.json"
+        networks:
+            - sail
+    react-app:
+        build:
+            context: ./react
+            dockerfile: Dockerfile
+        ports:
+            - '8999:80'
+        environment:
+            - NODE_ENV=production
+        volumes:
+            - ./react/src:/app/src
+            - ./react:/app
+        networks:
+            - sail
+
+networks:
+    sail:
+        driver: bridge
+volumes:
+    sail-mysql:
+        driver: local
+    qdrant-storage:
+        driver: local
+    app-data:
+        driver: local

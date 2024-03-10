@@ -1,0 +1,11 @@
+{
+    "question": "Masz aplikację internetową, w której użytkownicy mogą dodawać różne rodzaje treści, takie jak artykuły, zdjęcia, filmy i pliki audio. Obecnie kod aplikacji jest niespójny i powtarza się w wielu miejscach, co sprawia, że trudno jest zarządzać różnymi rodzajami treści. Jakim wzorcem projektowym można poprawić tę sytuację?",
+    "options": [
+        "Singleton",
+        "Fabryka abstrakcyjna",
+        "Strategia",
+        "Wzorzec Kompozyt"
+    ],
+    "correctAnswer": "Wzorzec Kompozyt",
+    "explanation": "Wzorzec Kompozyt jest idealny do rozwiązania tego problemu. Pozwala on traktować zarówno pojedyncze elementy (np. artykuły) jak i ich kompozycje (np. galerie zdjęć) w ten sam sposób. Możesz stworzyć jednolitą hierarchię obiektów, co ułatwia zarządzanie różnymi rodzajami treści oraz eliminuje powtarzający się kod. W PHP, przykład implementacji może wyglądać tak:\n\n```php\ninterface Treść {\n    public function render();\n}\n\nclass Artykuł implements Treść {\n    public function render() {\n        // Logika renderowania artykułu\n    }\n}\n\nclass Galeria implements Treść {\n    private $elementy = [];\n\n    public function add(Treść $treść) {\n        $this->elementy[] = $treść;\n    }\n\n    public function render() {\n        foreach ($this->elementy as $element) {\n            $element->render();\n        }\n    }\n}\n```"
+}
