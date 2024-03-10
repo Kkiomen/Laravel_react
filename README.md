@@ -1,3 +1,7 @@
+## Information
+This is a pure laravel and react project, combined together.
+A scheduler and queues based on RabbitMQ have been additionally configured.
+
 ## Initial start-up
 1. ```bash
     composer install
